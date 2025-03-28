@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>スーパー ホールモグラチャレンジ！</title>
+  <title>リアルタイム対戦！ホールモグラチャレンジ</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,9 +12,15 @@
       margin: 0;
       padding: 0;
     }
-    h1 {
-      color: #333;
-      margin-top: 20px;
+    h1 { margin-top: 20px; color: #333; }
+    /* プレイヤー名入力フォーム */
+    #player-form { margin-top: 20px; }
+    #player-form input {
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      width: 200px;
     }
     #status {
       display: flex;
@@ -60,6 +66,7 @@
       border-radius: 10px;
       cursor: pointer;
     }
+    /* リアルタイム対戦用のリーダーボード */
     #leaderboard {
       margin: 20px auto;
       width: 60%;
@@ -69,23 +76,25 @@
       width: 100%;
       border-collapse: collapse;
     }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
-    th, td {
-      padding: 8px;
-      text-align: center;
-    }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>スーパー ホールモグラチャレンジ！</h1>
+  <h1>リアルタイム対戦！ホールモグラチャレンジ</h1>
+  
+  <!-- プレイヤー名入力フォーム -->
+  <div id="player-form">
+    <input type="text" id="playerName" placeholder="プレイヤー名を入力してください">
+  </div>
+  
   <div id="status">
     <div id="score">スコア: 0</div>
     <div id="timer">残り時間: 30秒</div>
     <div id="level">レベル: 1</div>
     <div id="combo">コンボ: 0</div>
   </div>
+  
   <div id="game-container">
     <!-- 3×3 のグリッド -->
     <div class="hole" id="hole0"></div>
@@ -98,9 +107,10 @@
     <div class="hole" id="hole7"></div>
     <div class="hole" id="hole8"></div>
   </div>
+  
   <button id="start-btn">スタート</button>
   
-  <h2>リーダーボード</h2>
+  <h2>【オンライン対戦：リアルタイムリーダーボード】</h2>
   <div id="leaderboard">
     <table>
       <thead>
@@ -108,75 +118,89 @@
           <th>順位</th>
           <th>プレイヤー</th>
           <th>スコア</th>
-          <th>日時</th>
         </tr>
       </thead>
       <tbody id="leaderboard-body">
-        <!-- リーダーボード用の行をここに挿入 -->
+        <!-- リアルタイム更新される -->
       </tbody>
     </table>
   </div>
   
+  <!-- Socket.IO ライブラリを読み込み -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     let score = 0, timer = 30, level = 1, combo = 0;
     let countdownInterval, moleInterval;
+    let playerName = "";
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
     const levelDisplay = document.getElementById('level');
     const comboDisplay = document.getElementById('combo');
     const startBtn = document.getElementById('start-btn');
     
-    // 指定された穴の中からランダムに選ぶ
+    // Socket.IO クライアント初期化
+    const socket = io();
+    
+    // ランダムに穴を選択する関数
     function randomHole() {
       const holes = document.querySelectorAll('.hole');
       const random = Math.floor(Math.random() * holes.length);
       return holes[random];
     }
     
-    // モグラの表示処理
+    // モグラを表示する関数（レベルが上がると複数同時出現）
     function showMole() {
-      // 画面上に残っているモグラを消去
+      // 既存のモグラを削除
       document.querySelectorAll('.mole').forEach(m => m.remove());
       
-      // レベルが3以上の場合はモグラを2匹出現させる
-      let moleCount = level >= 3 ? 2 : 1;
+      const moleCount = level >= 3 ? 2 : 1;
       for (let i = 0; i < moleCount; i++) {
         const hole = randomHole();
-        if (hole.querySelector('.mole')) continue;  // 同じ穴に重ならないように
+        if (hole.querySelector('.mole')) continue;
         const mole = document.createElement('div');
         mole.classList.add('mole');
         hole.appendChild(mole);
         mole.addEventListener('click', hitMole);
         
-        // レベルに応じた表示時間（高レベルほど早く消える）
+        // モグラは一定時間経過後に自動で消える
         setTimeout(() => {
           if (hole.contains(mole)) hole.removeChild(mole);
-          // モグラを取り損ねたらコンボをリセット
+          // クリックミスでコンボリセット
           combo = 0;
           comboDisplay.textContent = "コンボ: " + combo;
         }, Math.max(700 - (level - 1) * 50, 300));
       }
     }
     
-    // モグラを叩いたときの動作
+    // モグラをクリックしたときの処理
     function hitMole(e) {
-      // 基本スコア＋連続ヒットのボーナス
       combo++;
       const bonus = Math.floor(combo / 5);
-      score += 1 + bonus;
+      score += (1 + bonus);
       scoreDisplay.textContent = "スコア: " + score;
       comboDisplay.textContent = "コンボ: " + combo;
+      
       e.target.remove();
       
-      // 一定スコアでレベルアップ（例: レベル毎に10ポイント）
       if (score >= level * 10) {
         level++;
         levelDisplay.textContent = "レベル: " + level;
       }
+      
+      // サーバーにスコア更新を送信
+      socket.emit("updateScore", { score: score });
     }
     
     // ゲーム開始処理
     function startGame() {
+      // プレイヤー名を取得。空の場合は「名無し」とする
+      playerName = document.getElementById('playerName').value.trim();
+      if (playerName === "") { playerName = "名無し"; }
+      document.getElementById('playerName').disabled = true;
+      
+      // ゲーム開始時にサーバーへ参加通知
+      socket.emit("joinGame", { playerName: playerName, score: 0 });
+      
       score = 0;
       timer = 30;
       level = 1;
@@ -187,14 +211,12 @@
       comboDisplay.textContent = "コンボ: " + combo;
       startBtn.disabled = true;
       
-      // カウントダウンタイマー
       countdownInterval = setInterval(() => {
         timer--;
         timerDisplay.textContent = "残り時間: " + timer + "秒";
         if (timer <= 0) endGame();
       }, 1000);
       
-      // レベルに応じたモグラ出現間隔の設定
       moleInterval = setInterval(() => {
         showMole();
       }, Math.max(1000 - (level - 1) * 100, 300));
@@ -205,43 +227,22 @@
       clearInterval(countdownInterval);
       clearInterval(moleInterval);
       startBtn.disabled = false;
+      document.getElementById('playerName').disabled = false;
       alert("ゲームオーバー！最終スコア: " + score);
-      submitScore();
-      loadLeaderboard();
     }
     
-    // PHPバックエンドへスコアの送信
-    function submitScore() {
-      fetch('update_score.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_score: score })
-      })
-      .then(response => response.text())
-      .then(data => console.log(data))
-      .catch(error => console.error('エラー:', error));
-    }
-    
-    // リーダーボードの読み込み（別ファイル leaderboard.php から JSON を取得）
-    function loadLeaderboard() {
-      fetch('leaderboard.php')
-        .then(response => response.json())
-        .then(data => {
-          const tbody = document.getElementById('leaderboard-body');
-          tbody.innerHTML = "";
-          data.forEach((entry, index) => {
-            let row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${entry.player_name}</td>
-              <td>${entry.score}</td>
-              <td>${entry.created_at}</td>
-            `;
-            tbody.appendChild(row);
-          });
-        })
-        .catch(error => console.error('リーダーボード読み込みエラー:', error));
-    }
+    // リアルタイムリーダーボード更新
+    socket.on("scoreboard", (scores) => {
+      const tbody = document.getElementById("leaderboard-body");
+      tbody.innerHTML = "";
+      const scoresArray = Object.values(scores);
+      scoresArray.sort((a, b) => b.score - a.score);
+      scoresArray.forEach((entry, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${index + 1}</td><td>${entry.playerName}</td><td>${entry.score}</td>`;
+        tbody.appendChild(row);
+      });
+    });
     
     startBtn.addEventListener('click', startGame);
   </script>
