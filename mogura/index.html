@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ホールモグラゲーム</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #eef;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: #333;
+      margin-top: 20px;
+    }
+    #score, #timer {
+      font-size: 1.5rem;
+      margin: 10px;
+    }
+    #game-container {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 10px;
+      width: max-content;
+      margin: 20px auto;
+    }
+    .hole {
+      width: 100px;
+      height: 100px;
+      background-color: #ccc;
+      border-radius: 10px;
+      position: relative;
+    }
+    .mole {
+      background-color: brown;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      cursor: pointer;
+    }
+    #start-btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      color: #fff;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 30px;
+    }
+    #start-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>ホールモグラゲーム</h1>
+  <p id="score">スコア: 0</p>
+  <p id="timer">タイマー: 30秒</p>
+  <div id="game-container">
+    <!-- 3×3 のグリッド -->
+    <div class="hole" id="hole0"></div>
+    <div class="hole" id="hole1"></div>
+    <div class="hole" id="hole2"></div>
+    <div class="hole" id="hole3"></div>
+    <div class="hole" id="hole4"></div>
+    <div class="hole" id="hole5"></div>
+    <div class="hole" id="hole6"></div>
+    <div class="hole" id="hole7"></div>
+    <div class="hole" id="hole8"></div>
+  </div>
+  <button id="start-btn">スタート</button>
+
+  <script>
+    let score = 0;
+    let timer = 30;
+    let countdownInterval;
+    let moleInterval;
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('start-btn');
+
+    // ランダムな穴を選ぶ
+    function randomHole() {
+      const holes = document.querySelectorAll('.hole');
+      const randomIndex = Math.floor(Math.random() * holes.length);
+      return holes[randomIndex];
+    }
+
+    // モグラを表示
+    function showMole() {
+      // 既にモグラがある穴があれば、取り除く
+      document.querySelectorAll('.mole').forEach(mole => mole.remove());
+      
+      const mole = document.createElement('div');
+      mole.classList.add('mole');
+      const hole = randomHole();
+      hole.appendChild(mole);
+      mole.addEventListener('click', hitMole);
+
+      // クリックされなければ一定時間後に自動で消える
+      setTimeout(() => {
+        if (hole.contains(mole)) {
+          hole.removeChild(mole);
+        }
+      }, 800);
+    }
+
+    // モグラをクリックしたときの処理
+    function hitMole(e) {
+      score++;
+      scoreDisplay.textContent = "スコア: " + score;
+      // 重複クリック防止のためクリックしたモグラは削除
+      e.target.remove();
+    }
+
+    // ゲーム開始
+    function startGame() {
+      score = 0;
+      timer = 30;
+      scoreDisplay.textContent = "スコア: " + score;
+      timerDisplay.textContent = "タイマー: " + timer + "秒";
+      startBtn.disabled = true;
+
+      // タイマーのカウントダウン
+      countdownInterval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = "タイマー: " + timer + "秒";
+        if (timer <= 0) {
+          endGame();
+        }
+      }, 1000);
+
+      // 定期的にモグラを表示（1秒ごと)
+      moleInterval = setInterval(showMole, 1000);
+    }
+
+    // ゲーム終了
+    function endGame() {
+      clearInterval(countdownInterval);
+      clearInterval(moleInterval);
+      startBtn.disabled = false;
+      alert("ゲームオーバー！最終スコア: " + score);
+      
+      // PHPスクリプトへ最終スコアを送信
+      fetch('update_score.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ final_score: score })
+      })
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error('エラー:', error));
+    }
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
