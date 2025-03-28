@@ -3,162 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Firebase ホールモグラ & チャット ゲーム</title>
+  <title>Firebase チャットアプリ</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
-      background: radial-gradient(circle, #fff, #cce6ff);
+      background: #f9f9f9;
       margin: 0;
-      padding: 0;
+      padding: 20px;
     }
-    h1 { margin-top: 20px; color: #333; }
-    /* プレイヤー名入力フォーム */
-    #player-form { margin-top: 20px; }
-    #player-form input {
-      padding: 10px;
-      font-size: 1rem;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-      width: 200px;
-    }
-    #controls { margin-top: 10px; }
-    #startBtn {
-      padding: 10px 20px;
-      font-size: 1rem;
-      background-color: #28a745;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    #status { font-size: 1.2rem; margin: 20px; }
-    /* ゲームフィールド（ホールモグラ用のグリッド） */
-    #grid {
-      width: 350px;
+    h1 { text-align: center; }
+    #chat-container {
+      width: 90%;
+      max-width: 600px;
       margin: 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      height: 500px;
     }
-    .cell {
-      width: 100px;
-      height: 100px;
-      border: 1px solid #ccc;
-      margin: 5px;
-      position: relative;
-      background-color: #eee;
-      border-radius: 10px;
-    }
-    .mole {
-      width: 60px;
-      height: 60px;
-      background: brown;
-      border-radius: 50%;
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .mole:active { transform: scale(0.9); }
-    /* リアルタイムリーダーボード */
-    #leaderboard {
-      width: 60%;
-      margin: 30px auto;
-      text-align: left;
-    }
-    #leaderboard h2 { text-align: center; }
-    #leaderboard ul {
-      list-style: none;
-      padding: 0;
-    }
-    #leaderboard li {
-      background: #f1f1f1;
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 5px;
-    }
-    /* チャットエリア */
-    #chat-section {
-      width: 60%;
-      margin: 30px auto;
-      text-align: left;
-    }
-    #chat-section h2 { text-align: center; }
-    #chat-box {
-      height: 200px;
-      border: 1px solid #ccc;
+    #messages {
+      flex: 1;
       padding: 10px;
       overflow-y: auto;
-      background: #fafafa;
-      border-radius: 5px;
+      border-bottom: 1px solid #ccc;
+    }
+    .message {
       margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: #e4e4e4;
     }
-    #chat-controls {
+    .message span {
+      font-size: 0.85em;
+      color: #555;
+    }
+    #input-area {
       display: flex;
-      gap: 10px;
+      padding: 10px;
     }
-    #chat-input {
+    #messageInput {
       flex: 1;
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #aaa;
-      border-radius: 5px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    #chat-send {
-      padding: 8px 16px;
-      font-size: 1rem;
-      background-color: #007BFF;
-      color: #fff;
+    #sendBtn {
+      padding: 0 16px;
+      margin-left: 10px;
+      font-size: 16px;
+      background: #007BFF;
+      color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
+    }
+    #sendBtn:hover {
+      background: #0056b3;
     }
   </style>
 </head>
 <body>
-  <h1>Firebase ホールモグラ & チャット ゲーム</h1>
-  
-  <!-- プレイヤー名入力フォーム -->
-  <div id="player-form">
-    <input type="text" id="playerName" placeholder="プレイヤー名を入力してください">
-  </div>
-  <div id="controls">
-    <button id="startBtn">スタート</button>
-  </div>
-  
-  <!-- ゲーム状況表示 -->
-  <div id="status">スコア: <span id="score">0</span></div>
-  
-  <!-- ゲームグリッド -->
-  <div id="grid"></div>
-  
-  <!-- リアルタイムリーダーボード -->
-  <div id="leaderboard">
-    <h2>リーダーボード</h2>
-    <ul id="scoreList"></ul>
-  </div>
-  
+  <h1>Firebase チャットアプリ</h1>
   <!-- チャットエリア -->
-  <div id="chat-section">
-    <h2>チャット</h2>
-    <div id="chat-box"></div>
-    <div id="chat-controls">
-      <input type="text" id="chat-input" placeholder="メッセージを入力してください">
-      <button id="chat-send">送信</button>
+  <div id="chat-container">
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="messageInput" placeholder="メッセージを入力してください">
+      <button id="sendBtn">送信</button>
     </div>
   </div>
-  
-  <!-- Firebase SDK と各モジュールの読み込み -->
+
+  <!-- Firebase SDK の読み込み（Module形式） -->
   <script type="module">
     // Firebase の各モジュールをインポート
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
 
-    // Firebase の設定（ご自分のプロジェクト情報に置き換えてください）
+    // あなたの Firebase 設定情報
     const firebaseConfig = {
       apiKey: "AIzaSyDai_QMtG08eKIOwHiw-X3iWbmrVSUSOww",
       authDomain: "openai-d48da.firebaseapp.com",
@@ -170,173 +95,54 @@
     };
 
     // Firebase 初期化
-    const appFirebase = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(appFirebase);
-    const db = getDatabase(appFirebase);
-    
-    // データベース参照の作成
-    const scoresRef = ref(db, 'scores');
-    const chatRef = ref(db, 'chat');
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
 
-    // ゲーム用変数
-    let score = 0;
-    const gameDuration = 30; // ゲーム時間（秒）
-    let moleInterval, gameTimeout;
-    const scoreDisplay = document.getElementById('score');
-    const grid = document.getElementById('grid');
-    const startBtn = document.getElementById('startBtn');
-    const playerNameInput = document.getElementById('playerName');
-    const scoreList = document.getElementById('scoreList');
-    
-    // チャット用要素
-    const chatBox = document.getElementById('chat-box');
-    const chatInput = document.getElementById('chat-input');
-    const chatSendBtn = document.getElementById('chat-send');
-    
-    // グリッド生成（3×3）
-    function createGrid() {
-      grid.innerHTML = "";
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        grid.appendChild(cell);
-      }
-    }
+    // Realtime Database の初期化
+    const db = getDatabase(app);
+    // "chat" ノードを参照
+    const chatRef = ref(db, "chat");
 
-    // ランダムなセルにモグラを出現させる
-    function showMole() {
-      const cells = document.querySelectorAll('.cell');
-      // 既存のモグラを除去
-      cells.forEach(cell => {
-        const existingMole = cell.querySelector('.mole');
-        if (existingMole) cell.removeChild(existingMole);
-      });
-      
-      const randomIndex = Math.floor(Math.random() * cells.length);
-      const selectedCell = cells[randomIndex];
-      const mole = document.createElement('div');
-      mole.classList.add('mole');
-      selectedCell.appendChild(mole);
-      
-      // モグラクリックでスコアアップ
-      mole.addEventListener('click', () => {
-        score++;
-        scoreDisplay.textContent = score;
-        mole.remove();
-      });
-      
-      // クリックされなかった場合、一定時間後に除去
-      setTimeout(() => {
-        if (selectedCell.contains(mole)) {
-          selectedCell.removeChild(mole);
-        }
-      }, 800);
-    }
+    // DOM 要素の取得
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
 
-    // ゲーム開始処理
-    function startGame() {
-      // プレイヤー名取得。空なら "名無し"
-      let playerName = playerNameInput.value.trim();
-      if (playerName === "") {
-        playerName = "名無し";
-        playerNameInput.value = playerName;
-      }
-      // 入力欄を無効化
-      playerNameInput.disabled = true;
-      
-      // 画面初期化
-      score = 0;
-      scoreDisplay.textContent = score;
-      createGrid();
-      startBtn.disabled = true;
-      
-      // ゲーム中は1秒おきにモグラ出現
-      moleInterval = setInterval(showMole, 1000);
-      // ゲーム終了タイマー
-      gameTimeout = setTimeout(() => {
-        clearInterval(moleInterval);
-        alert("タイムアップ！あなたのスコアは " + score + " です。");
-        // スコアを Firebase に送信
-        push(scoresRef, {
-          player: playerName,
-          score: score,
-          timestamp: Date.now()
-        });
-        startBtn.disabled = false;
-        playerNameInput.disabled = false;
-      }, gameDuration * 1000);
-    }
-    
-    startBtn.addEventListener('click', startGame);
-    
-    // リアルタイムリーダーボード更新: Firebase "scores" ノードの内容を更新
-    onValue(scoresRef, (snapshot) => {
-      const data = snapshot.val();
-      let scoresArray = [];
-      for (let key in data) {
-        scoresArray.push(data[key]);
-      }
-      scoresArray.sort((a, b) => b.score - a.score);
-      scoreList.innerHTML = "";
-      scoresArray.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.player}: ${item.score}`;
-        scoreList.appendChild(li);
-      });
-    });
-
-    // チャットメッセージ送信処理
-    function sendChatMessage() {
-      // 送信前にメッセージテキストを取得
-      const msg = chatInput.value.trim();
-      if (msg === "") return; // 空の場合は送信しない
-      
-      // プレイヤー名は既に startGame で設定されたもの、またはフォームの値
-      let playerName = playerNameInput.value.trim();
-      if (playerName === "") {
-        playerName = "名無し";
-      }
-      
-      // Firebase へチャットメッセージを送信
-      push(chatRef, {
-        player: playerName,
-        message: msg,
+    // メッセージ送信関数
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message === "") return;
+      // メッセージデータのオブジェクト。ここでは簡単のため固定の名前 "ユーザー" としています。
+      // 必要に応じてユーザー名入力機能を追加して下さい。
+      const messageData = {
+        user: "ユーザー",
+        message: message,
         timestamp: Date.now()
-      });
-      
-      // 入力欄をクリア
-      chatInput.value = "";
+      };
+      // メッセージデータを "chat" ノードに送信（push）
+      push(chatRef, messageData);
+      messageInput.value = "";
     }
-    
-    chatSendBtn.addEventListener('click', sendChatMessage);
-    // Enterキーでも送信できるようにする
-    chatInput.addEventListener('keypress', (e) => {
+
+    sendBtn.addEventListener("click", sendMessage);
+    // Enter キーで送信
+    messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
-        sendChatMessage();
+        sendMessage();
       }
     });
-    
-    // チャットメッセージのリアルタイム更新: "chat" ノードの内容を反映
-    onValue(chatRef, (snapshot) => {
-      const data = snapshot.val();
-      let chatMessages = [];
-      for (let key in data) {
-        chatMessages.push(data[key]);
-      }
-      // タイムスタンプ順（古い順）に並べ替え
-      chatMessages.sort((a, b) => a.timestamp - b.timestamp);
-      
-      chatBox.innerHTML = "";
-      chatMessages.forEach(item => {
-        const msgDiv = document.createElement('div');
-        msgDiv.textContent = `${item.player}: ${item.message}`;
-        chatBox.appendChild(msgDiv);
-      });
-      
-      // 最新のメッセージが見えるように自動スクロール
-      chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Firebase Realtime Database の "chat" ノードから新規メッセージをリアルタイムで取得
+    onChildAdded(chatRef, (data) => {
+      const msgData = data.val();
+      // メッセージの DOM 要素の作成
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message");
+      msgDiv.innerHTML = `<strong>${msgData.user}:</strong> ${msgData.message} <br><span>${new Date(msgData.timestamp).toLocaleString()}</span>`;
+      messagesDiv.appendChild(msgDiv);
+      // 追加時に最新のメッセージが見えるようにスクロール
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
-    
   </script>
 </body>
 </html>
