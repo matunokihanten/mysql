@@ -16,16 +16,6 @@
       color: #333;
       margin-top: 20px;
     }
-    #player-form {
-      margin-top: 20px;
-    }
-    #player-form input {
-      padding: 10px;
-      font-size: 1rem;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-      width: 200px;
-    }
     #status {
       display: flex;
       justify-content: center;
@@ -90,12 +80,6 @@
 </head>
 <body>
   <h1>スーパー ホールモグラチャレンジ！</h1>
-  
-  <!-- プレイヤー名入力フォーム -->
-  <div id="player-form">
-    <input type="text" id="playerName" placeholder="プレイヤー名を入力してください">
-  </div>
-  
   <div id="status">
     <div id="score">スコア: 0</div>
     <div id="timer">残り時間: 30秒</div>
@@ -128,7 +112,7 @@
         </tr>
       </thead>
       <tbody id="leaderboard-body">
-        <!-- リーダーボード用の行 -->
+        <!-- リーダーボード用の行をここに挿入 -->
       </tbody>
     </table>
   </div>
@@ -136,7 +120,6 @@
   <script>
     let score = 0, timer = 30, level = 1, combo = 0;
     let countdownInterval, moleInterval;
-    let playerName = "";  // グローバル変数にプレイヤー名を格納
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
     const levelDisplay = document.getElementById('level');
@@ -150,31 +133,34 @@
       return holes[random];
     }
     
-    // モグラの表示処理（より高レベルでは複数出現）
+    // モグラの表示処理
     function showMole() {
-      // 既存のモグラを削除
+      // 画面上に残っているモグラを消去
       document.querySelectorAll('.mole').forEach(m => m.remove());
       
+      // レベルが3以上の場合はモグラを2匹出現させる
       let moleCount = level >= 3 ? 2 : 1;
       for (let i = 0; i < moleCount; i++) {
         const hole = randomHole();
-        if (hole.querySelector('.mole')) continue;
+        if (hole.querySelector('.mole')) continue;  // 同じ穴に重ならないように
         const mole = document.createElement('div');
         mole.classList.add('mole');
         hole.appendChild(mole);
         mole.addEventListener('click', hitMole);
         
+        // レベルに応じた表示時間（高レベルほど早く消える）
         setTimeout(() => {
           if (hole.contains(mole)) hole.removeChild(mole);
-          // ミスの場合はコンボリセット
+          // モグラを取り損ねたらコンボをリセット
           combo = 0;
           comboDisplay.textContent = "コンボ: " + combo;
         }, Math.max(700 - (level - 1) * 50, 300));
       }
     }
     
-    // モグラをクリックしたときの処理
+    // モグラを叩いたときの動作
     function hitMole(e) {
+      // 基本スコア＋連続ヒットのボーナス
       combo++;
       const bonus = Math.floor(combo / 5);
       score += 1 + bonus;
@@ -182,6 +168,7 @@
       comboDisplay.textContent = "コンボ: " + combo;
       e.target.remove();
       
+      // 一定スコアでレベルアップ（例: レベル毎に10ポイント）
       if (score >= level * 10) {
         level++;
         levelDisplay.textContent = "レベル: " + level;
@@ -190,15 +177,6 @@
     
     // ゲーム開始処理
     function startGame() {
-      // 入力されたプレイヤー名を取得
-      playerName = document.getElementById('playerName').value.trim();
-      if (playerName === "") {
-        alert("プレイヤー名を入力してください");
-        return;
-      }
-      // 開始後は入力欄を無効化
-      document.getElementById('playerName').disabled = true;
-      
       score = 0;
       timer = 30;
       level = 1;
@@ -209,12 +187,14 @@
       comboDisplay.textContent = "コンボ: " + combo;
       startBtn.disabled = true;
       
+      // カウントダウンタイマー
       countdownInterval = setInterval(() => {
         timer--;
         timerDisplay.textContent = "残り時間: " + timer + "秒";
         if (timer <= 0) endGame();
       }, 1000);
       
+      // レベルに応じたモグラ出現間隔の設定
       moleInterval = setInterval(() => {
         showMole();
       }, Math.max(1000 - (level - 1) * 100, 300));
@@ -225,25 +205,24 @@
       clearInterval(countdownInterval);
       clearInterval(moleInterval);
       startBtn.disabled = false;
-      document.getElementById('playerName').disabled = false;
       alert("ゲームオーバー！最終スコア: " + score);
       submitScore();
       loadLeaderboard();
     }
     
-    // PHPバックエンドへスコア＋プレイヤー名を送信
+    // PHPバックエンドへスコアの送信
     function submitScore() {
       fetch('update_score.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_score: score, player_name: playerName })
+        body: JSON.stringify({ final_score: score })
       })
       .then(response => response.text())
       .then(data => console.log(data))
       .catch(error => console.error('エラー:', error));
     }
     
-    // リーダーボードの読み込み
+    // リーダーボードの読み込み（別ファイル leaderboard.php から JSON を取得）
     function loadLeaderboard() {
       fetch('leaderboard.php')
         .then(response => response.json())
