@@ -3,23 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Firebase もぐらたたきゲーム</title>
+  <title>リアルタイム対戦！ホールモグラチャレンジ</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(204,230,255,1) 100%);
       text-align: center;
-      background: radial-gradient(circle, #fff, #cce6ff);
       margin: 0;
-      padding: 20px;
+      padding: 0;
     }
-    h1 {
-      color: #333;
-      margin-top: 20px;
-    }
+    h1 { margin-top: 20px; color: #333; }
     /* プレイヤー名入力フォーム */
-    #player-form {
-      margin: 20px auto;
-    }
+    #player-form { margin-top: 20px; }
     #player-form input {
       padding: 10px;
       font-size: 1rem;
@@ -27,44 +22,32 @@
       border-radius: 5px;
       width: 200px;
     }
-    #controls {
-      margin-top: 10px;
-    }
-    #startBtn {
-      padding: 10px 20px;
-      font-size: 1rem;
-      background-color: #28a745;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
     #status {
-      font-size: 1.2rem;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 1.25rem;
       margin: 20px;
     }
-    /* ゲームグリッド（ホールのエリア） */
-    #grid {
-      width: 350px;
-      margin: 20px auto;
-      display: flex;
-      flex-wrap: wrap;
+    #game-container {
+      display: grid;
+      grid-template-columns: repeat(3, 120px);
+      grid-gap: 15px;
       justify-content: center;
+      margin: 0 auto;
     }
-    .cell {
-      width: 100px;
-      height: 100px;
-      border: 1px solid #ccc;
-      margin: 5px;
+    .hole {
+      width: 120px;
+      height: 120px;
+      background-color: #ddd;
+      border: 2px solid #aaa;
+      border-radius: 15px;
       position: relative;
-      background-color: #eee;
-      border-radius: 10px;
     }
     .mole {
-      width: 60px;
-      height: 60px;
-      background: brown;
+      background-color: #8B4513;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       position: absolute;
       top: 20px;
@@ -72,181 +55,196 @@
       cursor: pointer;
       transition: transform 0.2s;
     }
-    .mole:active {
-      transform: scale(0.9);
+    .mole:active { transform: scale(0.9); }
+    #start-btn {
+      margin: 25px;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
     }
-    /* リアルタイムリーダーボード */
+    /* リアルタイム対戦用のリーダーボード */
     #leaderboard {
+      margin: 20px auto;
       width: 60%;
-      margin: 30px auto;
       text-align: left;
     }
-    #leaderboard h2 {
-      text-align: center;
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
-    #leaderboard ul {
-      list-style: none;
-      padding: 0;
-    }
-    #leaderboard li {
-      background: #f1f1f1;
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 5px;
-    }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>Firebase もぐらたたきゲーム</h1>
+  <h1>リアルタイム対戦！ホールモグラチャレンジ</h1>
   
   <!-- プレイヤー名入力フォーム -->
   <div id="player-form">
     <input type="text" id="playerName" placeholder="プレイヤー名を入力してください">
   </div>
-  <div id="controls">
-    <button id="startBtn">スタート</button>
+  
+  <div id="status">
+    <div id="score">スコア: 0</div>
+    <div id="timer">残り時間: 30秒</div>
+    <div id="level">レベル: 1</div>
+    <div id="combo">コンボ: 0</div>
   </div>
   
-  <!-- ゲーム状況表示 -->
-  <div id="status">スコア: <span id="score">0</span></div>
+  <div id="game-container">
+    <!-- 3×3 のグリッド -->
+    <div class="hole" id="hole0"></div>
+    <div class="hole" id="hole1"></div>
+    <div class="hole" id="hole2"></div>
+    <div class="hole" id="hole3"></div>
+    <div class="hole" id="hole4"></div>
+    <div class="hole" id="hole5"></div>
+    <div class="hole" id="hole6"></div>
+    <div class="hole" id="hole7"></div>
+    <div class="hole" id="hole8"></div>
+  </div>
   
-  <!-- ゲームグリッド -->
-  <div id="grid"></div>
+  <button id="start-btn">スタート</button>
   
-  <!-- リアルタイムリーダーボード -->
+  <h2>【オンライン対戦：リアルタイムリーダーボード】</h2>
   <div id="leaderboard">
-    <h2>リーダーボード</h2>
-    <ul id="scoreList"></ul>
+    <table>
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>プレイヤー</th>
+          <th>スコア</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <!-- リアルタイム更新される -->
+      </tbody>
+    </table>
   </div>
   
-  <!-- Firebase SDK と Realtime Database の読み込み (Module形式) -->
-  <script type="module">
-    // Firebase の各モジュールをインポート
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
-
-    // あなたの Firebase 設定情報（ご自分の情報に置き換えてください）
-    const firebaseConfig = {
-      apiKey: "AIzaSyDai_QMtG08eKIOwHiw-X3iWbmrVSUSOww",
-      authDomain: "openai-d48da.firebaseapp.com",
-      projectId: "openai-d48da",
-      storageBucket: "openai-d48da.firebasestorage.app",
-      messagingSenderId: "414788528503",
-      appId: "1:414788528503:web:7dfe1f7b4018337cabd972",
-      measurementId: "G-ZZRVGSM7S1"
-    };
-
-    // Firebase 初期化
-    const appFirebase = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(appFirebase);
-    const db = getDatabase(appFirebase);
-    // "scores" ノードを参照（スコアとプレイヤー名の保存用）
-    const scoresRef = ref(db, 'scores');
-
-    // ゲーム用変数
-    let score = 0;
-    const gameDuration = 30; // ゲーム時間（秒）
-    let moleInterval, gameTimeout;
+  <!-- Socket.IO ライブラリを読み込み -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let score = 0, timer = 30, level = 1, combo = 0;
+    let countdownInterval, moleInterval;
+    let playerName = "";
     const scoreDisplay = document.getElementById('score');
-    const grid = document.getElementById('grid');
-    const startBtn = document.getElementById('startBtn');
-    const playerNameInput = document.getElementById('playerName');
-    const scoreList = document.getElementById('scoreList');
+    const timerDisplay = document.getElementById('timer');
+    const levelDisplay = document.getElementById('level');
+    const comboDisplay = document.getElementById('combo');
+    const startBtn = document.getElementById('start-btn');
     
-    // ゲームグリッド生成（3×3 のセル）
-    function createGrid() {
-      grid.innerHTML = "";
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        grid.appendChild(cell);
+    // Socket.IO クライアント初期化
+    const socket = io();
+    
+    // ランダムに穴を選択する関数
+    function randomHole() {
+      const holes = document.querySelectorAll('.hole');
+      const random = Math.floor(Math.random() * holes.length);
+      return holes[random];
+    }
+    
+    // モグラを表示する関数（レベルが上がると複数同時出現）
+    function showMole() {
+      // 既存のモグラを削除
+      document.querySelectorAll('.mole').forEach(m => m.remove());
+      
+      const moleCount = level >= 3 ? 2 : 1;
+      for (let i = 0; i < moleCount; i++) {
+        const hole = randomHole();
+        if (hole.querySelector('.mole')) continue;
+        const mole = document.createElement('div');
+        mole.classList.add('mole');
+        hole.appendChild(mole);
+        mole.addEventListener('click', hitMole);
+        
+        // モグラは一定時間経過後に自動で消える
+        setTimeout(() => {
+          if (hole.contains(mole)) hole.removeChild(mole);
+          // クリックミスでコンボリセット
+          combo = 0;
+          comboDisplay.textContent = "コンボ: " + combo;
+        }, Math.max(700 - (level - 1) * 50, 300));
       }
     }
     
-    // ランダムなセルにモグラを出現させる
-    function showMole() {
-      const cells = document.querySelectorAll('.cell');
-      // 既存のモグラを除去
-      cells.forEach(cell => {
-        const existingMole = cell.querySelector('.mole');
-        if (existingMole) cell.removeChild(existingMole);
-      });
+    // モグラをクリックしたときの処理
+    function hitMole(e) {
+      combo++;
+      const bonus = Math.floor(combo / 5);
+      score += (1 + bonus);
+      scoreDisplay.textContent = "スコア: " + score;
+      comboDisplay.textContent = "コンボ: " + combo;
       
-      const randomIndex = Math.floor(Math.random() * cells.length);
-      const selectedCell = cells[randomIndex];
-      const mole = document.createElement('div');
-      mole.classList.add('mole');
-      selectedCell.appendChild(mole);
+      e.target.remove();
       
-      // モグラをクリックするとスコアがアップ
-      mole.addEventListener('click', () => {
-        score++;
-        scoreDisplay.textContent = score;
-        mole.remove();
-      });
+      if (score >= level * 10) {
+        level++;
+        levelDisplay.textContent = "レベル: " + level;
+      }
       
-      // クリックされなかった場合、一定時間後に自動でモグラを除去
-      setTimeout(() => {
-        if (selectedCell.contains(mole)) {
-          selectedCell.removeChild(mole);
-        }
-      }, 800);
+      // サーバーにスコア更新を送信
+      socket.emit("updateScore", { score: score });
     }
     
     // ゲーム開始処理
     function startGame() {
-      // プレイヤー名の取得。空の場合は "名無し" にする
-      let playerName = playerNameInput.value.trim();
-      if (playerName === "") {
-        playerName = "名無し";
-        playerNameInput.value = playerName;
-      }
-      // 入力欄を無効化
-      playerNameInput.disabled = true;
+      // プレイヤー名を取得。空の場合は「名無し」とする
+      playerName = document.getElementById('playerName').value.trim();
+      if (playerName === "") { playerName = "名無し"; }
+      document.getElementById('playerName').disabled = true;
       
-      // 画面上の初期化
+      // ゲーム開始時にサーバーへ参加通知
+      socket.emit("joinGame", { playerName: playerName, score: 0 });
+      
       score = 0;
-      scoreDisplay.textContent = score;
-      createGrid();
+      timer = 30;
+      level = 1;
+      combo = 0;
+      scoreDisplay.textContent = "スコア: " + score;
+      timerDisplay.textContent = "残り時間: " + timer + "秒";
+      levelDisplay.textContent = "レベル: " + level;
+      comboDisplay.textContent = "コンボ: " + combo;
       startBtn.disabled = true;
       
-      // 1秒おきにモグラ出現
-      moleInterval = setInterval(showMole, 1000);
+      countdownInterval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = "残り時間: " + timer + "秒";
+        if (timer <= 0) endGame();
+      }, 1000);
       
-      // ゲーム終了タイマーを設定
-      gameTimeout = setTimeout(() => {
-        clearInterval(moleInterval);
-        alert("タイムアップ！あなたのスコアは " + score + " です。");
-        // スコアとプレイヤー名を Firebase に保存
-        push(scoresRef, {
-          player: playerName,
-          score: score,
-          timestamp: Date.now()
-        });
-        startBtn.disabled = false;
-        playerNameInput.disabled = false;
-      }, gameDuration * 1000);
+      moleInterval = setInterval(() => {
+        showMole();
+      }, Math.max(1000 - (level - 1) * 100, 300));
     }
     
-    startBtn.addEventListener('click', startGame);
+    // ゲーム終了処理
+    function endGame() {
+      clearInterval(countdownInterval);
+      clearInterval(moleInterval);
+      startBtn.disabled = false;
+      document.getElementById('playerName').disabled = false;
+      alert("ゲームオーバー！最終スコア: " + score);
+    }
     
-    // リアルタイムリーダーボードの更新：Firebase "scores" ノードの内容を画面に反映
-    onValue(scoresRef, (snapshot) => {
-      const data = snapshot.val();
-      let scoresArray = [];
-      for (let key in data) {
-        scoresArray.push(data[key]);
-      }
-      // スコアの降順に並べ替え
+    // リアルタイムリーダーボード更新
+    socket.on("scoreboard", (scores) => {
+      const tbody = document.getElementById("leaderboard-body");
+      tbody.innerHTML = "";
+      const scoresArray = Object.values(scores);
       scoresArray.sort((a, b) => b.score - a.score);
-      scoreList.innerHTML = "";
-      scoresArray.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.player}: ${item.score}`;
-        scoreList.appendChild(li);
+      scoresArray.forEach((entry, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${index + 1}</td><td>${entry.playerName}</td><td>${entry.score}</td>`;
+        tbody.appendChild(row);
       });
     });
+    
+    startBtn.addEventListener('click', startGame);
   </script>
 </body>
 </html>
