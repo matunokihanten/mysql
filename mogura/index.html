@@ -2,92 +2,126 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>スーパー ホールモグラチャレンジ！</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>究極のモグラたたきチャレンジ！</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(204,230,255,1) 100%);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: radial-gradient(circle, #ffe6f2 0%, #ffcce6 100%);
+      color: #333;
       text-align: center;
       margin: 0;
       padding: 0;
+      overflow: hidden;
     }
     h1 {
-      color: #333;
+      color: #d6336c;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      font-size: 2.5rem;
       margin-top: 20px;
     }
     #status {
       display: flex;
       justify-content: center;
       gap: 20px;
-      font-size: 1.25rem;
-      margin: 20px;
+      font-size: 1.5rem;
+      margin: 20px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     #game-container {
       display: grid;
-      grid-template-columns: repeat(3, 120px);
-      grid-gap: 15px;
+      grid-template-columns: repeat(3, 150px);
+      grid-gap: 20px;
       justify-content: center;
-      margin: 0 auto;
+      margin: 20px auto;
     }
     .hole {
-      width: 120px;
-      height: 120px;
-      background-color: #ddd;
-      border: 2px solid #aaa;
-      border-radius: 15px;
-      position: relative;
-    }
-    .mole {
-      background-color: #8B4513;
-      width: 80px;
-      height: 80px;
+      width: 150px;
+      height: 150px;
+      background: #8B4513;
+      border: 5px solid #654321;
       border-radius: 50%;
-      position: absolute;
-      top: 20px;
-      left: 20px;
+      position: relative;
+      overflow: hidden;
       cursor: pointer;
-      transition: transform 0.2s;
     }
-    .mole:active { transform: scale(0.9); }
+    .mole, .gold-mole, .bomb-mole {
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      bottom: -100px;
+      left: 25px;
+      transition: bottom 0.2s ease-out;
+    }
+    .mole { background-color: #A0522D; border-radius: 50%; }
+    .gold-mole { background-color: #FFD700; border-radius: 50%; border: 3px solid #DAA520; }
+    .bomb-mole { background-color: #444; border-radius: 50%; border: 3px solid #222; }
+    .mole-up { bottom: 25px; }
+    .mole:active, .gold-mole:active, .bomb-mole:active { transform: scale(0.95); }
+
     #start-btn {
       margin: 25px;
       padding: 15px 30px;
-      font-size: 1.2rem;
-      background-color: #28a745;
-      color: #fff;
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: #4CAF50;
+      color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
+    #start-btn:hover { background: #45a049; }
     #leaderboard {
       margin: 20px auto;
-      width: 60%;
-      text-align: left;
+      width: 80%;
+      background: rgba(255,255,255,0.8);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
+      margin-top: 10px;
     }
     th, td {
-      padding: 8px;
+      padding: 12px;
       text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    tr:hover { background-color: #f1f1f1; }
+    
+    .final-score {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #d6336c;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
     }
   </style>
 </head>
 <body>
-  <h1>スーパー ホールモグラチャレンジ！</h1>
+  <h1>究極のモグラたたきチャレンジ！</h1>
   <div id="status">
     <div id="score">スコア: 0</div>
-    <div id="timer">残り時間: 30秒</div>
+    <div id="timer">残り時間: 60秒</div>
     <div id="level">レベル: 1</div>
     <div id="combo">コンボ: 0</div>
   </div>
   <div id="game-container">
-    <!-- 3×3 のグリッド -->
     <div class="hole" id="hole0"></div>
     <div class="hole" id="hole1"></div>
     <div class="hole" id="hole2"></div>
@@ -111,139 +145,187 @@
           <th>日時</th>
         </tr>
       </thead>
-      <tbody id="leaderboard-body">
-        <!-- リーダーボード用の行をここに挿入 -->
-      </tbody>
+      <tbody id="leaderboard-body"></tbody>
     </table>
   </div>
   
+  <audio id="hit-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
+  <audio id="miss-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" preload="auto"></audio>
+  <audio id="gameover-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" preload="auto"></audio>
+
   <script>
-    let score = 0, timer = 30, level = 1, combo = 0;
+    let score = 0, timer = 60, level = 1, combo = 0;
+    let playerName = "名無し";
     let countdownInterval, moleInterval;
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
     const levelDisplay = document.getElementById('level');
     const comboDisplay = document.getElementById('combo');
     const startBtn = document.getElementById('start-btn');
+    const holes = document.querySelectorAll('.hole');
     
-    // 指定された穴の中からランダムに選ぶ
-    function randomHole() {
-      const holes = document.querySelectorAll('.hole');
-      const random = Math.floor(Math.random() * holes.length);
-      return holes[random];
+    const hitSound = document.getElementById('hit-sound');
+    const missSound = document.getElementById('miss-sound');
+    const gameoverSound = document.getElementById('gameover-sound');
+
+    // プレイヤー名の入力を求める
+    function promptPlayerName() {
+        const name = prompt("プレイヤー名を入力してください：", "名無し");
+        if (name) {
+            playerName = name;
+        }
     }
-    
-    // モグラの表示処理
-    function showMole() {
-      // 画面上に残っているモグラを消去
-      document.querySelectorAll('.mole').forEach(m => m.remove());
-      
-      // レベルが3以上の場合はモグラを2匹出現させる
-      let moleCount = level >= 3 ? 2 : 1;
-      for (let i = 0; i < moleCount; i++) {
-        const hole = randomHole();
-        if (hole.querySelector('.mole')) continue;  // 同じ穴に重ならないように
-        const mole = document.createElement('div');
-        mole.classList.add('mole');
-        hole.appendChild(mole);
-        mole.addEventListener('click', hitMole);
+
+    // ランダムな穴とモグラの種類を返す
+    function randomHoleAndMole() {
+        const random = Math.floor(Math.random() * holes.length);
+        const hole = holes[random];
+        let moleType = 'mole';
+        const moleChance = Math.random();
         
-        // レベルに応じた表示時間（高レベルほど早く消える）
-        setTimeout(() => {
-          if (hole.contains(mole)) hole.removeChild(mole);
-          // モグラを取り損ねたらコンボをリセット
-          combo = 0;
-          comboDisplay.textContent = "コンボ: " + combo;
-        }, Math.max(700 - (level - 1) * 50, 300));
-      }
+        if (moleChance < 0.1) { // 10%でゴールドモグラ
+            moleType = 'gold-mole';
+        } else if (moleChance > 0.9) { // 10%で爆弾モグラ
+            moleType = 'bomb-mole';
+        }
+        return { hole, moleType };
     }
     
-    // モグラを叩いたときの動作
-    function hitMole(e) {
-      // 基本スコア＋連続ヒットのボーナス
-      combo++;
-      const bonus = Math.floor(combo / 5);
-      score += 1 + bonus;
-      scoreDisplay.textContent = "スコア: " + score;
-      comboDisplay.textContent = "コンボ: " + combo;
-      e.target.remove();
-      
-      // 一定スコアでレベルアップ（例: レベル毎に10ポイント）
-      if (score >= level * 10) {
-        level++;
-        levelDisplay.textContent = "レベル: " + level;
-      }
+    // モグラの表示
+    function showMole() {
+        document.querySelectorAll('.mole, .gold-mole, .bomb-mole').forEach(m => m.remove());
+        
+        let moleCount = Math.min(2 + Math.floor(level / 5), 5); // レベルに応じて最大5匹まで
+        for (let i = 0; i < moleCount; i++) {
+            const { hole, moleType } = randomHoleAndMole();
+            if (hole.querySelector('.mole, .gold-mole, .bomb-mole')) continue;
+            
+            const mole = document.createElement('div');
+            mole.classList.add(moleType);
+            mole.classList.add('mole-up');
+            
+            mole.addEventListener('click', () => hitMole(mole, moleType));
+            
+            hole.appendChild(mole);
+            
+            setTimeout(() => {
+                if (hole.contains(mole)) {
+                    mole.classList.remove('mole-up');
+                    setTimeout(() => {
+                        if (hole.contains(mole)) hole.removeChild(mole);
+                    }, 200);
+                    if (moleType !== 'bomb-mole') {
+                        combo = 0;
+                        comboDisplay.textContent = "コンボ: " + combo;
+                        missSound.play();
+                    }
+                }
+            }, Math.max(1000 - level * 50, 300));
+        }
     }
     
-    // ゲーム開始処理
+    // モグラを叩いたときの処理
+    function hitMole(moleElement, type) {
+        moleElement.classList.remove('mole-up');
+        setTimeout(() => moleElement.remove(), 200);
+        
+        let points = 0;
+        if (type === 'gold-mole') {
+            points = 5;
+            combo++;
+        } else if (type === 'bomb-mole') {
+            points = -5;
+            combo = 0;
+        } else {
+            points = 1;
+            combo++;
+        }
+        
+        const comboBonus = Math.floor(combo / 5);
+        score += points + comboBonus;
+        score = Math.max(0, score);
+        
+        scoreDisplay.textContent = "スコア: " + score;
+        comboDisplay.textContent = "コンボ: " + combo;
+        
+        if (type !== 'bomb-mole') {
+            hitSound.play();
+        } else {
+            missSound.play();
+        }
+    }
+    
+    // ゲーム開始
     function startGame() {
-      score = 0;
-      timer = 30;
-      level = 1;
-      combo = 0;
-      scoreDisplay.textContent = "スコア: " + score;
-      timerDisplay.textContent = "残り時間: " + timer + "秒";
-      levelDisplay.textContent = "レベル: " + level;
-      comboDisplay.textContent = "コンボ: " + combo;
-      startBtn.disabled = true;
-      
-      // カウントダウンタイマー
-      countdownInterval = setInterval(() => {
-        timer--;
-        timerDisplay.textContent = "残り時間: " + timer + "秒";
-        if (timer <= 0) endGame();
-      }, 1000);
-      
-      // レベルに応じたモグラ出現間隔の設定
-      moleInterval = setInterval(() => {
-        showMole();
-      }, Math.max(1000 - (level - 1) * 100, 300));
+        promptPlayerName();
+        score = 0; timer = 60; level = 1; combo = 0;
+        scoreDisplay.textContent = "スコア: 0";
+        timerDisplay.textContent = "残り時間: 60秒";
+        levelDisplay.textContent = "レベル: 1";
+        comboDisplay.textContent = "コンボ: 0";
+        startBtn.disabled = true;
+        
+        countdownInterval = setInterval(() => {
+            timer--;
+            timerDisplay.textContent = "残り時間: " + timer + "秒";
+            if (timer % 10 === 0) { // 10秒ごとにレベルアップ
+                level++;
+                levelDisplay.textContent = "レベル: " + level;
+            }
+            if (timer <= 0) endGame();
+        }, 1000);
+        
+        moleInterval = setInterval(showMole, Math.max(1000 - level * 10, 300));
     }
     
-    // ゲーム終了処理
+    // ゲーム終了
     function endGame() {
-      clearInterval(countdownInterval);
-      clearInterval(moleInterval);
-      startBtn.disabled = false;
-      alert("ゲームオーバー！最終スコア: " + score);
-      submitScore();
-      loadLeaderboard();
+        clearInterval(countdownInterval);
+        clearInterval(moleInterval);
+        startBtn.disabled = false;
+        gameoverSound.play();
+        
+        alert(`ゲームオーバー！\nプレイヤー名: ${playerName}\n最終スコア: ${score}`);
+        scoreDisplay.innerHTML = `<div class="final-score">最終スコア: ${score}</div>`;
+        submitScore();
+        loadLeaderboard();
     }
     
-    // PHPバックエンドへスコアの送信
+    // スコア送信
     function submitScore() {
-      fetch('update_score.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_score: score })
-      })
-      .then(response => response.text())
-      .then(data => console.log(data))
-      .catch(error => console.error('エラー:', error));
+        fetch('update_score.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_name: playerName, final_score: score })
+        })
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error('エラー:', error));
     }
     
-    // リーダーボードの読み込み（別ファイル leaderboard.php から JSON を取得）
+    // リーダーボード読み込み
     function loadLeaderboard() {
-      fetch('leaderboard.php')
-        .then(response => response.json())
-        .then(data => {
-          const tbody = document.getElementById('leaderboard-body');
-          tbody.innerHTML = "";
-          data.forEach((entry, index) => {
-            let row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${entry.player_name}</td>
-              <td>${entry.score}</td>
-              <td>${entry.created_at}</td>
-            `;
-            tbody.appendChild(row);
-          });
-        })
-        .catch(error => console.error('リーダーボード読み込みエラー:', error));
+        fetch('leaderboard.php')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('leaderboard-body');
+                tbody.innerHTML = "";
+                data.forEach((entry, index) => {
+                    let row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${entry.player_name}</td>
+                        <td>${entry.score}</td>
+                        <td>${entry.created_at}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('リーダーボード読み込みエラー:', error));
     }
     
     startBtn.addEventListener('click', startGame);
+    loadLeaderboard();
   </script>
 </body>
 </html>

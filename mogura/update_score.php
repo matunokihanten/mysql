@@ -2,7 +2,7 @@
 // データベース接続情報
 $host = 'localhost';
 $user = 'root';
-$password = 'A53080000abab';  // ご提供のパスワード
+$password = 'A53080000abab';
 $dbname = 'GameDB';
 
 // MySQLに接続
@@ -14,10 +14,13 @@ if ($conn->connect_error) {
 // JSONデータの受け取り
 $data = json_decode(file_get_contents('php://input'), true);
 $final_score = intval($data['final_score']);
-// 今回は簡略化のため固定のプレイヤー名 "Player1" として保存
-$player_name = 'Player1';
+$player_name = htmlspecialchars($data['player_name']); // HTML特殊文字をエスケープ
 
-// プリペアドステートメントでスコアを挿入
+if (empty($player_name)) {
+    $player_name = "名無し";
+}
+
+// プリペアドステートメントでスコアとプレイヤー名を挿入
 $stmt = $conn->prepare("INSERT INTO scores (player_name, score) VALUES (?, ?)");
 $stmt->bind_param("si", $player_name, $final_score);
 
