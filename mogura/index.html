@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>究極のモグラたたきチャレンジ！</title>
   <style>
     body {
@@ -54,11 +54,25 @@
       position: absolute;
       bottom: -100px;
       left: 25px;
-      transition: bottom 0.2s ease-out;
+      transition: bottom 0.2s ease-out, transform 0.1s ease-in-out;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
-    .mole { background-color: #A0522D; border-radius: 50%; }
-    .gold-mole { background-color: #FFD700; border-radius: 50%; border: 3px solid #DAA520; }
-    .bomb-mole { background-color: #444; border-radius: 50%; border: 3px solid #222; }
+    .mole {
+      background: radial-gradient(circle at 50% 20%, #A0522D 0%, #8B4513 70%);
+      border-radius: 50%;
+    }
+    .gold-mole {
+      background: radial-gradient(circle at 50% 20%, #FFD700 0%, #DAA520 70%);
+      border-radius: 50%;
+      border: 3px solid #DAA520;
+      box-shadow: 3px 3px 7px rgba(0,0,0,0.4);
+    }
+    .bomb-mole {
+      background: radial-gradient(circle at 50% 20%, #444 0%, #222 70%);
+      border-radius: 50%;
+      border: 3px solid #222;
+      box-shadow: 3px 3px 7px rgba(0,0,0,0.4);
+    }
     .mole-up { bottom: 25px; }
     .mole:active, .gold-mole:active, .bomb-mole:active { transform: scale(0.95); }
 
@@ -99,7 +113,7 @@
     }
     tr:nth-child(even) { background-color: #f9f9f9; }
     tr:hover { background-color: #f1f1f1; }
-    
+
     .final-score {
         font-size: 3rem;
         font-weight: bold;
@@ -133,7 +147,7 @@
     <div class="hole" id="hole8"></div>
   </div>
   <button id="start-btn">スタート</button>
-  
+
   <h2>リーダーボード</h2>
   <div id="leaderboard">
     <table>
@@ -148,7 +162,7 @@
       <tbody id="leaderboard-body"></tbody>
     </table>
   </div>
-  
+
   <audio id="hit-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
   <audio id="miss-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" preload="auto"></audio>
   <audio id="gameover-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" preload="auto"></audio>
@@ -163,7 +177,7 @@
     const comboDisplay = document.getElementById('combo');
     const startBtn = document.getElementById('start-btn');
     const holes = document.querySelectorAll('.hole');
-    
+
     const hitSound = document.getElementById('hit-sound');
     const missSound = document.getElementById('miss-sound');
     const gameoverSound = document.getElementById('gameover-sound');
@@ -182,32 +196,32 @@
         const hole = holes[random];
         let moleType = 'mole';
         const moleChance = Math.random();
-        
-        if (moleChance < 0.1) { // 10%でゴールドモグラ
+
+        if (moleChance < 0.1) {
             moleType = 'gold-mole';
-        } else if (moleChance > 0.9) { // 10%で爆弾モグラ
+        } else if (moleChance > 0.9) {
             moleType = 'bomb-mole';
         }
         return { hole, moleType };
     }
-    
+
     // モグラの表示
     function showMole() {
         document.querySelectorAll('.mole, .gold-mole, .bomb-mole').forEach(m => m.remove());
-        
-        let moleCount = Math.min(2 + Math.floor(level / 5), 5); // レベルに応じて最大5匹まで
+
+        let moleCount = Math.min(2 + Math.floor(level / 5), 5);
         for (let i = 0; i < moleCount; i++) {
             const { hole, moleType } = randomHoleAndMole();
             if (hole.querySelector('.mole, .gold-mole, .bomb-mole')) continue;
-            
+
             const mole = document.createElement('div');
             mole.classList.add(moleType);
             mole.classList.add('mole-up');
-            
+
             mole.addEventListener('click', () => hitMole(mole, moleType));
-            
+
             hole.appendChild(mole);
-            
+
             setTimeout(() => {
                 if (hole.contains(mole)) {
                     mole.classList.remove('mole-up');
@@ -223,12 +237,12 @@
             }, Math.max(1000 - level * 50, 300));
         }
     }
-    
+
     // モグラを叩いたときの処理
     function hitMole(moleElement, type) {
         moleElement.classList.remove('mole-up');
         setTimeout(() => moleElement.remove(), 200);
-        
+
         let points = 0;
         if (type === 'gold-mole') {
             points = 5;
@@ -240,21 +254,21 @@
             points = 1;
             combo++;
         }
-        
+
         const comboBonus = Math.floor(combo / 5);
         score += points + comboBonus;
         score = Math.max(0, score);
-        
+
         scoreDisplay.textContent = "スコア: " + score;
         comboDisplay.textContent = "コンボ: " + combo;
-        
+
         if (type !== 'bomb-mole') {
             hitSound.play();
         } else {
             missSound.play();
         }
     }
-    
+
     // ゲーム開始
     function startGame() {
         promptPlayerName();
@@ -264,33 +278,33 @@
         levelDisplay.textContent = "レベル: 1";
         comboDisplay.textContent = "コンボ: 0";
         startBtn.disabled = true;
-        
+
         countdownInterval = setInterval(() => {
             timer--;
             timerDisplay.textContent = "残り時間: " + timer + "秒";
-            if (timer % 10 === 0) { // 10秒ごとにレベルアップ
+            if (timer % 10 === 0) {
                 level++;
                 levelDisplay.textContent = "レベル: " + level;
             }
             if (timer <= 0) endGame();
         }, 1000);
-        
+
         moleInterval = setInterval(showMole, Math.max(1000 - level * 10, 300));
     }
-    
+
     // ゲーム終了
     function endGame() {
         clearInterval(countdownInterval);
         clearInterval(moleInterval);
         startBtn.disabled = false;
         gameoverSound.play();
-        
+
         alert(`ゲームオーバー！\nプレイヤー名: ${playerName}\n最終スコア: ${score}`);
         scoreDisplay.innerHTML = `<div class="final-score">最終スコア: ${score}</div>`;
         submitScore();
         loadLeaderboard();
     }
-    
+
     // スコア送信
     function submitScore() {
         fetch('update_score.php', {
@@ -302,7 +316,7 @@
         .then(data => console.log(data))
         .catch(error => console.error('エラー:', error));
     }
-    
+
     // リーダーボード読み込み
     function loadLeaderboard() {
         fetch('leaderboard.php')
@@ -323,7 +337,7 @@
             })
             .catch(error => console.error('リーダーボード読み込みエラー:', error));
     }
-    
+
     startBtn.addEventListener('click', startGame);
     loadLeaderboard();
   </script>

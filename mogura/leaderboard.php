@@ -1,12 +1,14 @@
 <?php
 // データベース接続情報
+// 環境に合わせて 'user' と 'password' を調整してください
 $host = 'localhost';
 $user = 'root';
-$password = 'A53080000abab';
+$password = ''; // このパスワードを空にすることで、多くのローカル環境で認証が通ります
 $dbname = 'GameDB';
 
 $conn = new mysqli($host, $user, $password, $dbname);
 if ($conn->connect_error) {
+    // 接続エラーの場合は、分かりやすいメッセージを出力
     die("Connection failed: " . $conn->connect_error);
 }
 
