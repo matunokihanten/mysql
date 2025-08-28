@@ -57,10 +57,6 @@
       transition: bottom 0.2s ease-out, transform 0.1s ease-in-out;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
       border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
     }
     .mole {
       background: radial-gradient(circle at 50% 20%, #A0522D 0%, #8B4513 70%);
@@ -70,68 +66,51 @@
     }
     .bomb-mole {
       background: radial-gradient(circle at 50% 20%, #444 0%, #222 70%);
-      border: 3px solid #222;
     }
-    
+
     /* モグラの顔のデザイン */
-    .mole::before, .gold-mole::before, .bomb-mole::before {
-        content: '';
+    .mole-eye, .gold-mole-eye, .bomb-mole-eye {
         position: absolute;
-        top: 30px;
         width: 15px;
         height: 15px;
         background-color: white;
         border-radius: 50%;
         border: 2px solid black;
+        top: 25px;
     }
-    .mole::after, .gold-mole::after, .bomb-mole::after {
-        content: '';
+    .mole-eye:nth-child(1), .gold-mole-eye:nth-child(1), .bomb-mole-eye:nth-child(1) { left: 20px; }
+    .mole-eye:nth-child(2), .gold-mole-eye:nth-child(2), .bomb-mole-eye:nth-child(2) { left: 65px; }
+
+    .gold-mole-eye { background-color: #f00; }
+    .bomb-mole-eye { background-color: #f00; }
+
+    .mole-mouth, .gold-mole-mouth, .bomb-mole-mouth {
         position: absolute;
         bottom: 25px;
         width: 30px;
         height: 10px;
-        background-color: #f0f;
         border-radius: 0 0 10px 10px;
         border: 2px solid black;
         border-top: none;
-    }
-    /* モグラごとの目の位置調整 */
-    .mole::before, .gold-mole::before {
-        left: 25px;
-        transform: translateX(-50%);
-    }
-    .mole::before {
-        left: 30px;
-    }
-    .gold-mole::before {
-        left: 30px;
-    }
-    .bomb-mole::before {
-        left: 30px;
-    }
-    .mole::before, .gold-mole::before {
-        left: 25px;
-    }
-    .bomb-mole::before {
-        left: 25px;
-    }
-    .mole::after, .gold-mole::after {
         left: 35px;
     }
-    .bomb-mole::after {
-        left: 35px;
+    .mole-mouth { background-color: #f0f; }
+    .gold-mole-mouth { background-color: #f00; }
+    .bomb-mole-mouth { background-color: #444; }
+
+    .mole-whisker {
+        position: absolute;
+        width: 25px;
+        height: 1px;
+        background-color: black;
+        top: 50px;
     }
-    
-    .mole::before, .gold-mole::before {
-        top: 25px;
-        left: 25px;
-    }
-    .gold-mole::before {
-        background-color: #f00; /* ゴールデンモグラは赤い目 */
-    }
-    .bomb-mole::before {
-        background-color: #f00; /* 爆弾モグラは赤い目 */
-    }
+    .mole-whisker:nth-child(3) { left: 10px; transform: rotate(15deg); }
+    .mole-whisker:nth-child(4) { left: 10px; transform: rotate(0deg); }
+    .mole-whisker:nth-child(5) { left: 10px; transform: rotate(-15deg); }
+    .mole-whisker:nth-child(6) { right: 10px; transform: rotate(-15deg); }
+    .mole-whisker:nth-child(7) { right: 10px; transform: rotate(0deg); }
+    .mole-whisker:nth-child(8) { right: 10px; transform: rotate(15deg); }
 
     .mole-up { bottom: 25px; }
     .mole:active, .gold-mole:active, .bomb-mole:active { transform: scale(0.95); }
@@ -267,6 +246,7 @@
 
     // モグラの表示
     function showMole() {
+        // すべてのモグラを一度削除
         document.querySelectorAll('.mole, .gold-mole, .bomb-mole').forEach(m => m.remove());
 
         let moleCount = Math.min(2 + Math.floor(level / 5), 5);
@@ -278,15 +258,46 @@
             mole.classList.add(moleType);
             mole.classList.add('mole-up');
 
-            mole.addEventListener('click', () => hitMole(mole, moleType));
+            // 顔のパーツを追加
+            const eye1 = document.createElement('div');
+            eye1.classList.add(moleType + '-eye');
+            eye1.style.left = '20px';
+            mole.appendChild(eye1);
 
+            const eye2 = document.createElement('div');
+            eye2.classList.add(moleType + '-eye');
+            eye2.style.left = '65px';
+            mole.appendChild(eye2);
+
+            const mouth = document.createElement('div');
+            mouth.classList.add(moleType + '-mouth');
+            mole.appendChild(mouth);
+
+            // ひげを追加
+            for (let j = 0; j < 3; j++) {
+                const whiskerLeft = document.createElement('div');
+                whiskerLeft.classList.add('mole-whisker');
+                whiskerLeft.style.left = '10px';
+                whiskerLeft.style.top = `${50 + j * 5 - 5}px`;
+                whiskerLeft.style.transform = `rotate(${j * 15 - 15}deg)`;
+                mole.appendChild(whiskerLeft);
+
+                const whiskerRight = document.createElement('div');
+                whiskerRight.classList.add('mole-whisker');
+                whiskerRight.style.right = '10px';
+                whiskerRight.style.top = `${50 + j * 5 - 5}px`;
+                whiskerRight.style.transform = `rotate(${-j * 15 + 15}deg)`;
+                mole.appendChild(whiskerRight);
+            }
+            
+            mole.addEventListener('click', () => hitMole(mole, moleType));
             hole.appendChild(mole);
 
             setTimeout(() => {
                 if (hole.contains(mole)) {
                     mole.classList.remove('mole-up');
                     setTimeout(() => {
-                        if (hole.contains(mole)) hole.removeChild(mole);
+                        if (hole.contains(mole)) mole.removeChild(mole);
                     }, 200);
                     if (moleType !== 'bomb-mole') {
                         combo = 0;
