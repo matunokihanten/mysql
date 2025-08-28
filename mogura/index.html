@@ -56,23 +56,83 @@
       left: 25px;
       transition: bottom 0.2s ease-out, transform 0.1s ease-in-out;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
     .mole {
       background: radial-gradient(circle at 50% 20%, #A0522D 0%, #8B4513 70%);
-      border-radius: 50%;
     }
     .gold-mole {
       background: radial-gradient(circle at 50% 20%, #FFD700 0%, #DAA520 70%);
-      border-radius: 50%;
-      border: 3px solid #DAA520;
-      box-shadow: 3px 3px 7px rgba(0,0,0,0.4);
     }
     .bomb-mole {
       background: radial-gradient(circle at 50% 20%, #444 0%, #222 70%);
-      border-radius: 50%;
       border: 3px solid #222;
-      box-shadow: 3px 3px 7px rgba(0,0,0,0.4);
     }
+    
+    /* モグラの顔のデザイン */
+    .mole::before, .gold-mole::before, .bomb-mole::before {
+        content: '';
+        position: absolute;
+        top: 30px;
+        width: 15px;
+        height: 15px;
+        background-color: white;
+        border-radius: 50%;
+        border: 2px solid black;
+    }
+    .mole::after, .gold-mole::after, .bomb-mole::after {
+        content: '';
+        position: absolute;
+        bottom: 25px;
+        width: 30px;
+        height: 10px;
+        background-color: #f0f;
+        border-radius: 0 0 10px 10px;
+        border: 2px solid black;
+        border-top: none;
+    }
+    /* モグラごとの目の位置調整 */
+    .mole::before, .gold-mole::before {
+        left: 25px;
+        transform: translateX(-50%);
+    }
+    .mole::before {
+        left: 30px;
+    }
+    .gold-mole::before {
+        left: 30px;
+    }
+    .bomb-mole::before {
+        left: 30px;
+    }
+    .mole::before, .gold-mole::before {
+        left: 25px;
+    }
+    .bomb-mole::before {
+        left: 25px;
+    }
+    .mole::after, .gold-mole::after {
+        left: 35px;
+    }
+    .bomb-mole::after {
+        left: 35px;
+    }
+    
+    .mole::before, .gold-mole::before {
+        top: 25px;
+        left: 25px;
+    }
+    .gold-mole::before {
+        background-color: #f00; /* ゴールデンモグラは赤い目 */
+    }
+    .bomb-mole::before {
+        background-color: #f00; /* 爆弾モグラは赤い目 */
+    }
+
     .mole-up { bottom: 25px; }
     .mole:active, .gold-mole:active, .bomb-mole:active { transform: scale(0.95); }
 
