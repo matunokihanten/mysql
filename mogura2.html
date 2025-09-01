@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>モグラたたきゲーム</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #eef;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  h1 {
+    color: #333;
+    margin-bottom: 30px;
+  }
+  #game-container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  #game {
+    display: grid;
+    grid-template-columns: repeat(3, 120px);
+    gap: 15px;
+    justify-content: center;
+  }
+  .hole {
+    width: 120px;
+    height: 120px;
+    background-color: #8b4513;
+    border-radius: 50%;
+    position: relative;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewport="0 0 100 100" style="fill:black;font-size:24px;"><text y="50%">🔨</text></svg>') 15 15, auto;
+    overflow: hidden;
+    border: 5px solid #654321;
+    box-sizing: border-box;
+  }
+  .mole {
+    width: 90px;
+    height: 90px;
+    background-color: #555;
+    border-radius: 50%;
+    position: absolute;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: bottom 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #333;
+    box-sizing: border-box;
+  }
+  .mole.up {
+    bottom: 5px;
+  }
+  /* 目のスタイル */
+  .mole::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    box-shadow: 40px 0 white;
+  }
+  /* 鼻のスタイル */
+  .mole::after {
+    content: '';
+    width: 10px;
+    height: 5px;
+    background-color: black;
+    border-radius: 50%;
+    position: absolute;
+    top: 50px;
+    transform: translateX(-50%);
+  }
+  #score, #timer, #message {
+    margin-top: 20px;
+    font-size: 22px;
+    color: #333;
+    font-weight: bold;
+  }
+  #startBtn, #resetBtn {
+    margin-top: 25px;
+    padding: 12px 25px;
+    font-size: 18px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+  }
+  #startBtn:hover, #resetBtn:hover {
+    background-color: #45a049;
+  }
+  #startBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  #message {
+    color: red;
+  }
+  .celebration {
+    font-size: 30px;
+    position: absolute;
+    animation: fadeOutUp 1s forwards;
+    pointer-events: none;
+    z-index: 10;
+  }
+  @keyframes fadeOutUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>モグラたたきゲーム</h1>
+<div id="game-container">
+  <div id="game">
+    <div class="hole" id="hole0"><div class="mole" id="mole0"></div></div>
+    <div class="hole" id="hole1"><div class="mole" id="mole1"></div></div>
+    <div class="hole" id="hole2"><div class="mole" id="mole2"></div></div>
+    <div class="hole" id="hole3"><div class="mole" id="mole3"></div></div>
+    <div class="hole" id="hole4"><div class="mole" id="mole4"></div></div>
+    <div class="hole" id="hole5"><div class="mole" id="mole5"></div></div>
+    <div class="hole" id="hole6"><div class="mole" id="mole6"></div></div>
+    <div class="hole" id="hole7"><div class="mole" id="mole7"></div></div>
+    <div class="hole" id="hole8"><div class="mole" id="mole8"></div></div>
+  </div>
+
+  <div id="score">スコア: 0</div>
+  <div id="timer">残り時間: 60秒</div>
+  <div id="message"></div>
+  <button id="startBtn">ゲームスタート</button>
+</div>
+
+<script>
+let score = 0;
+let timeLeft = 60;
+let gameInterval;
+let moleTimeout;
+let gameTimer;
+let isGameActive = false;
+let moleInterval = 700; // 初期モグラ出現間隔 (ミリ秒)
+const NUM_HOLES = 9;
+
+const moles = [];
+const holes = [];
+const scoreDisplay = document.getElementById('score');
+const timerDisplay = document.getElementById('timer');
+const messageDisplay = document.getElementById('message');
+const startBtn = document.getElementById('startBtn');
+
+// すべての穴とモグラの要素を取得
+for (let i = 0; i < NUM_HOLES; i++) {
+  holes[i] = document.getElementById('hole' + i);
+  moles[i] = document.getElementById('mole' + i);
+  holes[i].addEventListener('click', () => {
+    if (isGameActive && moles[i].classList.contains('up')) {
+      score++;
+      scoreDisplay.textContent = 'スコア: ' + score;
+      moles[i].classList.remove('up');
+      
+      // スコア表示の演出
+      createCelebration(holes[i]);
+    }
+  });
+}
+
+// ゲームスタート
+startBtn.addEventListener('click', startGame);
+
+function startGame() {
+  score = 0;
+  timeLeft = 60;
+  moleInterval = 700;
+  scoreDisplay.textContent = 'スコア: ' + score;
+  timerDisplay.textContent = '残り時間: ' + timeLeft + '秒';
+  messageDisplay.textContent = '';
+  startBtn.disabled = true;
+  isGameActive = true;
+
+  moles.forEach(mole => mole.classList.remove('up'));
+
+  // モグラを出すインターバルを開始
+  gameInterval = setInterval(showMole, moleInterval);
+
+  // ゲームタイマーを開始
+  gameTimer = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = '残り時間: ' + timeLeft + '秒';
+
+    // 難易度調整: 10秒ごとにモグラの出現間隔を短くする
+    if (timeLeft % 10 === 0 && moleInterval > 300) {
+      clearInterval(gameInterval);
+      moleInterval -= 50; // 間隔を短縮
+      gameInterval = setInterval(showMole, moleInterval);
+    }
+
+    if (timeLeft <= 0) {
+      endGame();
+    }
+  }, 1000);
+}
+
+// モグラを出す関数
+function showMole() {
+  moles.forEach(mole => mole.classList.remove('up'));
+  const index = Math.floor(Math.random() * NUM_HOLES);
+  moles[index].classList.add('up');
+  
+  clearTimeout(moleTimeout);
+  moleTimeout = setTimeout(() => {
+    moles[index].classList.remove('up');
+  }, moleInterval - 100); // 出現間隔より少し短く表示
+}
+
+function endGame() {
+  clearInterval(gameInterval);
+  clearInterval(gameTimer);
+  clearTimeout(moleTimeout);
+  isGameActive = false;
+  startBtn.disabled = false;
+  messageDisplay.textContent = 'ゲーム終了！あなたのスコアは ' + score + ' です！';
+  moles.forEach(mole => mole.classList.remove('up'));
+}
+
+// 叩いた時の演出
+function createCelebration(holeElement) {
+  const celebration = document.createElement('div');
+  celebration.textContent = '🎉';
+  celebration.classList.add('celebration');
+  
+  const rect = holeElement.getBoundingClientRect();
+  celebration.style.left = `${rect.left + rect.width / 2}px`;
+  celebration.style.top = `${rect.top}px`;
+  
+  document.body.appendChild(celebration);
+  
+  // 1秒後に要素を削除
+  setTimeout(() => {
+    celebration.remove();
+  }, 1000);
+}
+</script>
+
+</body>
+</html>
