@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>究極のモグラたたきチャレンジ！</title>
+    <style>
+        :root {
+            --mole-brown: #8B4513;
+            --gold-mole-gold: #FFD700;
+            --bomb-mole-black: #444;
+            --diamond-mole-blue: #00BFFF;
+            --freeze-mole-cyan: #00FFFF;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: radial-gradient(circle, #ffe6f2 0%, #ffcce6 100%);
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h1 {
+            color: #d6336c;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 2.5rem;
+            margin-top: 20px;
+        }
+
+        #status {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px 30px;
+            font-size: 1.5rem;
+            margin: 20px auto;
+            max-width: 800px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(100px, 150px));
+            grid-gap: clamp(10px, 5vw, 20px);
+            justify-content: center;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .hole {
+            width: 100%;
+            padding-bottom: 100%;
+            background: #A52A2A;
+            border: 5px solid #8B4513;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .mole {
+            position: absolute;
+            bottom: -150%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75%;
+            height: 75%;
+            transition: bottom 0.2s ease-out, transform 0.1s ease-in-out;
+            border-radius: 50%;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .mole-face {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at 50% 20%, #A0522D 0%, #8B4513 70%);
+            border-radius: 50%;
+        }
+
+        .mole-face.gold {
+            background: radial-gradient(circle at 50% 20%, var(--gold-mole-gold) 0%, #DAA520 70%);
+        }
+
+        .mole-face.bomb {
+            background: radial-gradient(circle at 50% 20%, var(--bomb-mole-black) 0%, #222 70%);
+        }
+
+        .mole-face.diamond {
+            background: radial-gradient(circle at 50% 20%, var(--diamond-mole-blue) 0%, #008080 70%);
+        }
+
+        .mole-face.freeze {
+            background: radial-gradient(circle at 50% 20%, var(--freeze-mole-cyan) 0%, #00CED1 70%);
+        }
+
+        .mole-eye {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: white;
+            border-radius: 50%;
+            border: 2px solid black;
+            top: 25px;
+        }
+
+        .mole-eye:nth-child(1) { left: 20%; }
+        .mole-eye:nth-child(2) { right: 20%; }
+        .mole-face.bomb .mole-eye, .mole-face.diamond .mole-eye, .mole-face.freeze .mole-eye {
+            background-color: red;
+            border-color: red;
+        }
+
+        .mole-mouth {
+            position: absolute;
+            bottom: 15%;
+            width: 30%;
+            height: 10%;
+            border-radius: 0 0 10px 10px;
+            border: 2px solid black;
+            border-top: none;
+            left: 35%;
+            background-color: #f0f;
+        }
+        .mole-face.gold .mole-mouth { background-color: #f00; }
+        .mole-face.bomb .mole-mouth, .mole-face.diamond .mole-mouth, .mole-face.freeze .mole-mouth { background-color: transparent; }
+
+        .mole.up { bottom: 15%; }
+        .mole:active { transform: scale(0.95) translateX(-50%); }
+
+        .score-popup {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d6336c;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            animation: score-fade-out 1s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes score-fade-out {
+            0% { top: 20%; opacity: 1; }
+            100% { top: -20%; opacity: 0; }
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            animation: modal-pop 0.3s forwards;
+        }
+
+        @keyframes modal-pop {
+            100% { transform: scale(1); }
+        }
+
+        #start-btn, .restart-btn {
+            margin-top: 25px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #start-btn:hover, .restart-btn:hover { background: #45a049; }
+
+        #leaderboard {
+            margin: 20px auto;
+            width: 90%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+
+        .final-score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #d6336c;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            #status { font-size: 1.2rem; }
+            .hole { grid-template-columns: repeat(3, 100px); }
+            #start-btn, .restart-btn { font-size: 1.2rem; padding: 10px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>究極のモグラたたきチャレンジ！</h1>
+    <div id="status">
+        <div id="score">スコア: 0</div>
+        <div id="timer">残り時間: 60秒</div>
+        <div id="level">レベル: 1</div>
+        <div id="combo">コンボ: 0</div>
+    </div>
+    <div id="game-container">
+        <div class="hole" data-hole-id="0"></div>
+        <div class="hole" data-hole-id="1"></div>
+        <div class="hole" data-hole-id="2"></div>
+        <div class="hole" data-hole-id="3"></div>
+        <div class="hole" data-hole-id="4"></div>
+        <div class="hole" data-hole-id="5"></div>
+        <div class="hole" data-hole-id="6"></div>
+        <div class="hole" data-hole-id="7"></div>
+        <div class="hole" data-hole-id="8"></div>
+    </div>
+
+    <div id="modal-container" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="modal-title">ゲームスタート！</h2>
+            <p id="modal-message">モグラを叩いて高得点を狙おう！</p>
+            <button id="modal-button" class="restart-btn">ゲーム開始</button>
+        </div>
+    </div>
+
+    <h2>リーダーボード</h2>
+    <div id="leaderboard">
+        <table>
+            <thead>
+                <tr>
+                    <th>順位</th>
+                    <th>プレイヤー</th>
+                    <th>スコア</th>
+                    <th>日時</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+    </div>
+
+    <audio id="hit-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
+    <audio id="miss-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" preload="auto"></audio>
+    <audio id="gameover-sound" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" preload="auto"></audio>
+
+    <script>
+        const game = {
+            score: 0,
+            timer: 60,
+            level: 1,
+            combo: 0,
+            playerName: "名無し",
+            countdownInterval: null,
+            moleInterval: null,
+            molesInHoles: new Map(), // 穴にいるモグラの情報を管理
+            isFeverMode: false,
+            feverTimer: null,
+            isFrozen: false,
+            freezeTimer: null,
+            isGameActive: false,
+            autoRestartTimer: null, // 自動再開タイマー
+        };
+
+        const elements = {
+            scoreDisplay: document.getElementById('score'),
+            timerDisplay: document.getElementById('timer'),
+            levelDisplay: document.getElementById('level'),
+            comboDisplay: document.getElementById('combo'),
+            startBtn: document.getElementById('start-btn'), // 実際にはmodalButtonを使用
+            holes: document.querySelectorAll('.hole'),
+            modalContainer: document.getElementById('modal-container'),
+            modalTitle: document.getElementById('modal-title'),
+            modalMessage: document.getElementById('modal-message'),
+            modalButton: document.getElementById('modal-button'),
+            leaderboardBody: document.getElementById('leaderboard-body'),
+            hitSound: document.getElementById('hit-sound'),
+            missSound: document.getElementById('miss-sound'),
+            gameoverSound: document.getElementById('gameover-sound')
+        };
+
+        // モグラのタイプを定義
+        const moleTypes = [
+            { type: 'mole', points: 1, chance: 0.7, color: 'normal' },
+            { type: 'gold-mole', points: 5, chance: 0.1, color: 'gold' },
+            { type: 'bomb-mole', points: -5, chance: 0.1, color: 'bomb' },
+            { type: 'diamond-mole', points: 0, chance: 0.05, color: 'diamond' },
+            { type: 'freeze-mole', points: 0, chance: 0.05, color: 'freeze' },
+        ];
+
+        // プレイヤー名の入力を求める
+        function promptPlayerName() {
+            const name = prompt("プレイヤー名を入力してください：", "名無し");
+            if (name) {
+                game.playerName = name.trim();
+            }
+        }
+
+        // ランダムなモグラの種類を決定
+        function getRandomMoleType() {
+            const random = Math.random();
+            let cumulativeChance = 0;
+            for (const mole of moleTypes) {
+                cumulativeChance += mole.chance;
+                if (random < cumulativeChance) {
+                    return mole;
+                }
+            }
+            return moleTypes[0]; // デフォルト
+        }
+
+        // モグラを生成して穴に表示
+        function populateMoles() {
+            if (!game.isGameActive) return;
+
+            // すべてのモグラを一度削除
+            elements.holes.forEach(hole => hole.innerHTML = '');
+            game.molesInHoles.clear();
+
+            let moleCount = Math.min(2 + Math.floor(game.level / 5), 5);
+            const occupiedHoles = new Set();
+
+            for (let i = 0; i < moleCount; i++) {
+                let randomHoleIndex;
+                do {
+                    randomHoleIndex = Math.floor(Math.random() * elements.holes.length);
+                } while (occupiedHoles.has(randomHoleIndex));
+                occupiedHoles.add(randomHoleIndex);
+
+                const hole = elements.holes[randomHoleIndex];
+                const moleInfo = getRandomMoleType();
+
+                const mole = document.createElement('div');
+                mole.classList.add('mole', 'up');
+                mole.dataset.type = moleInfo.type;
+
+                const moleFace = document.createElement('div');
+                moleFace.classList.add('mole-face', moleInfo.color);
+
+                // 顔のパーツ
+                moleFace.innerHTML = `
+                    <div class="mole-eye"></div>
+                    <div class="mole-eye"></div>
+                    <div class="mole-mouth"></div>
+                `;
+
+                mole.appendChild(moleFace);
+                hole.appendChild(mole);
+
+                game.molesInHoles.set(hole, { moleElement: mole, type: moleInfo.type, isHit: false });
+
+                // モグラが時間内に叩かれなかった場合の処理
+                const timeout = setTimeout(() => {
+                    const moleState = game.molesInHoles.get(hole);
+                    if (moleState && !moleState.isHit) {
+                        mole.classList.remove('up');
+                        game.molesInHoles.delete(hole);
+                        setTimeout(() => mole.remove(), 200);
+                        if (moleInfo.type !== 'bomb-mole') {
+                            game.combo = 0;
+                            elements.comboDisplay.textContent = "コンボ: " + game.combo;
+                            elements.missSound.play();
+                        }
+                    }
+                }, Math.max(1500 - game.level * 50, 500));
+
+                // setTimeout IDを保存しておく
+                game.molesInHoles.get(hole).timeout = timeout;
+            }
+        }
+
+        // スコア表示をポップアップ
+        function showScorePopup(points, element) {
+            const popup = document.createElement('div');
+            popup.classList.add('score-popup');
+            popup.textContent = (points > 0 ? '+' : '') + points;
+            popup.style.color = points > 0 ? '#4CAF50' : '#F44336';
+            element.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        // モグラを叩いたときの処理
+        function hitMole(hole) {
+            const moleState = game.molesInHoles.get(hole);
+            if (!moleState || moleState.isHit) return;
+
+            clearTimeout(moleState.timeout);
+            moleState.isHit = true;
+            moleState.moleElement.classList.remove('up');
+            setTimeout(() => moleState.moleElement.remove(), 200);
+            game.molesInHoles.delete(hole);
+
+            const moleType = moleState.type;
+            let points = 0;
+
+            if (moleType === 'gold-mole') {
+                points = 5;
+            } else if (moleType === 'bomb-mole') {
+                points = -10;
+                game.combo = 0;
+                elements.missSound.play();
+                showScorePopup(points, hole);
+                game.score = Math.max(0, game.score + points);
+                elements.scoreDisplay.textContent = "スコア: " + game.score;
+                elements.comboDisplay.textContent = "コンボ: " + game.combo;
+                return;
+            } else if (moleType === 'diamond-mole') {
+                startFeverMode();
+                showScorePopup("FEVER!", hole);
+                return;
+            } else if (moleType === 'freeze-mole') {
+                startFreezeMode();
+                showScorePopup("FROZEN!", hole);
+                return;
+            } else {
+                points = 1;
+            }
+
+            game.combo++;
+            const comboBonus = Math.floor(game.combo / 5) * 0.1;
+            const finalPoints = Math.round(points * (game.isFeverMode ? 5 : 1) * (1 + comboBonus));
+
+            game.score += finalPoints;
+            elements.scoreDisplay.textContent = "スコア: " + game.score;
+            elements.comboDisplay.textContent = "コンボ: " + game.combo;
+            elements.hitSound.play();
+            showScorePopup(finalPoints, hole);
+        }
+
+        // フィーバーモード開始
+        function startFeverMode() {
+            if (game.isFeverMode) return;
+            game.isFeverMode = true;
+            document.body.style.background = 'radial-gradient(circle, #ff007f 0%, #ff66b2 100%)';
+            elements.scoreDisplay.style.color = 'gold';
+
+            clearTimeout(game.feverTimer);
+            game.feverTimer = setTimeout(() => {
+                game.isFeverMode = false;
+                document.body.style.background = 'radial-gradient(circle, #ffe6f2 0%, #ffcce6 100%)';
+                elements.scoreDisplay.style.color = 'black';
+            }, 5000);
+        }
+
+        // フリーズモード開始
+        function startFreezeMode() {
+            if (game.isFrozen) return;
+            game.isFrozen = true;
+            clearInterval(game.countdownInterval);
+            clearInterval(game.moleInterval);
+            elements.timerDisplay.style.color = '#00BFFF';
+            elements.timerDisplay.textContent = "残り時間: 10秒 (フリーズ!)";
+
+            clearTimeout(game.freezeTimer);
+            game.freezeTimer = setTimeout(() => {
+                game.isFrozen = false;
+                elements.timerDisplay.style.color = 'black';
+                startTimer();
+                startMolePopulating();
+            }, 10000);
+        }
+
+        // ゲームタイマーを開始
+        function startTimer() {
+            game.countdownInterval = setInterval(() => {
+                game.timer--;
+                elements.timerDisplay.textContent = "残り時間: " + game.timer + "秒";
+                if (game.timer % 10 === 0) {
+                    game.level++;
+                    elements.levelDisplay.textContent = "レベル: " + game.level;
+                    clearInterval(game.moleInterval);
+                    startMolePopulating();
+                }
+                if (game.timer <= 0) endGame();
+            }, 1000);
+        }
+
+        // モグラの出現を制御
+        function startMolePopulating() {
+            game.moleInterval = setInterval(populateMoles, Math.max(1000 - game.level * 10, 300));
+        }
+
+        // ゲーム開始
+        function startGame() {
+            hideModal();
+            promptPlayerName();
+            game.score = 0; game.timer = 60; game.level = 1; game.combo = 0;
+            game.isGameActive = true;
+            game.molesInHoles.clear();
+
+            elements.scoreDisplay.textContent = "スコア: 0";
+            elements.timerDisplay.textContent = "残り時間: 60秒";
+            elements.levelDisplay.textContent = "レベル: 1";
+            elements.comboDisplay.textContent = "コンボ: 0";
+            // elements.startBtn.disabled = true; // modalButtonは常に有効にする
+
+            startTimer();
+            startMolePopulating();
+        }
+
+        // ゲーム終了
+        function endGame() {
+            game.isGameActive = false;
+            clearInterval(game.countdownInterval);
+            clearInterval(game.moleInterval);
+            // elements.startBtn.disabled = false; // modalButtonは常に有効にする
+            elements.gameoverSound.play();
+
+            document.querySelectorAll('.mole').forEach(mole => mole.remove());
+
+            // 自動再開タイマーを設定
+            clearTimeout(game.autoRestartTimer);
+            game.autoRestartTimer = setTimeout(() => {
+                showModal('ゲーム再開！', 'もう一度挑戦！');
+                elements.modalButton.textContent = '再開';
+                elements.modalTitle.textContent = 'ゲームオーバー！';
+                elements.modalMessage.innerHTML = `お疲れ様でした！<br>プレイヤー：${game.playerName}<br><span class="final-score">最終スコア：${game.score}</span>`;
+            }, 5000);
+
+            saveScore(game.playerName, game.score);
+        }
+
+        // モーダル表示
+        function showModal(title, message) {
+            elements.modalTitle.textContent = title;
+            elements.modalMessage.innerHTML = message;
+            elements.modalContainer.style.display = 'flex';
+        }
+
+        // モーダル非表示
+        function hideModal() {
+            elements.modalContainer.style.display = 'none';
+        }
+
+        // リーダーボードの保存・読み込み（localStorage）
+        function getLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('whackAMoleLeaderboard')) || [];
+            return leaderboard.sort((a, b) => b.score - a.score).slice(0, 10);
+        }
+
+        function saveScore(playerName, score) {
+            const leaderboard = getLeaderboard();
+            const newEntry = { player_name: playerName, score: score, created_at: new Date().toLocaleString() };
+            leaderboard.push(newEntry);
+            localStorage.setItem('whackAMoleLeaderboard', JSON.stringify(leaderboard));
+            loadLeaderboard();
+        }
+
+        function loadLeaderboard() {
+            const leaderboard = getLeaderboard();
+            elements.leaderboardBody.innerHTML = '';
+            leaderboard.forEach((entry, index) => {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.player_name}</td>
+                    <td>${entry.score}</td>
+                    <td>${entry.created_at}</td>
+                `;
+                elements.leaderboardBody.appendChild(row);
+            });
+        }
+
+        // イベントリスナー
+        // modalButtonがスタートボタンとしても再開ボタンとしても機能します
+        elements.modalButton.addEventListener('click', () => {
+            // ゲームがアクティブでない場合（初回起動時、またはゲームオーバー後）はゲームを開始
+            if (!game.isGameActive) {
+                startGame();
+            }
+        });
+
+        elements.holes.forEach(hole => {
+            hole.addEventListener('click', () => hitMole(hole));
+            hole.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                hitMole(hole);
+            });
+        });
+
+        // ページロード時にリーダーボードを読み込み、最初のモーダルを表示
+        window.onload = () => {
+            loadLeaderboard();
+            showModal('究極のモグラたたきチャレンジ！', 'ルール：<br>- 通常モグラ: 1pt<br>- ゴールドモグラ: 5pt<br>- 爆弾モグラ: -10pt<br>- 💎: 5秒間スコア5倍<br>- 🧊: 10秒間時間停止<br><br>コンボを繋いで高得点を目指そう！');
+            elements.modalButton.textContent = 'ゲーム開始'; // 初回は「ゲーム開始」ボタンにする
+        };
+    </script>
+</body>
+</html>
